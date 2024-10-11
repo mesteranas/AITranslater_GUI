@@ -1,6 +1,7 @@
 import sys
 from custome_errors import *
 sys.excepthook = my_excepthook
+from llamaapi import LlamaAPI
 import requests
 import update
 import gui
@@ -12,6 +13,7 @@ import PyQt6.QtCore as qt2
 language.init_translation()
 import google.generativeai as genai
 genai.configure(api_key="")
+llama = LlamaAPI("")
 TextModel=genai.GenerativeModel('gemini-pro')
 class AITranslaterObjects(qt2.QObject):
     Finnish=qt2.pyqtSignal(str)
@@ -50,10 +52,23 @@ and don't type any thing in the message except the text
             except Exception as error:
                 print(error)
                 result="error"
-        else:
+        elif self.model==1:
             try:
                 response = TextModel.generate_content(prompt)
                 result=response.text
+            except:
+                result=_("error")
+        elif self.model==2:
+            api_request_json = {
+  "model": "llama3.1-405b",
+"max_tokens":3000,
+  "messages": [
+    {"role": "user", "content": prompt},
+  ]
+  }
+            try:
+                response = llama.run(api_request_json)
+                result=response.json()["choices"][0]["message"]["content"]
             except:
                 result=_("error")
 
@@ -67,7 +82,7 @@ class main (qt.QMainWindow):
         layout.addWidget(qt.QLabel(_("text to translate")))
         layout.addWidget(self.text)
         self.model=qt.QComboBox()
-        self.model.addItems(["chatgpt","gemini"])
+        self.model.addItems(["chatgpt","gemini","lama"])
         layout.addWidget(qt.QLabel(_("select the model")))
         layout.addWidget(self.model)
         self.translateTo=qt.QComboBox()
